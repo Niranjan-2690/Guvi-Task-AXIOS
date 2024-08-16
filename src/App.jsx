@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 function App() {
   const [formInput, setFormInput] = useState({
@@ -12,6 +12,17 @@ function App() {
   });
   const [formData, setFormData] = useState([]);
   const [editIndex, setEditIndex] = useState(null); // Track the index of the item being edited
+
+  useEffect(() => {
+    // Fetch data when component mounts
+    axios.get("https://jsonplaceholder.typicode.com/users")
+      .then((res) => {
+        setFormData(res.data);
+      })
+      .catch((err) => {
+        console.log("Error", err);
+      });
+  }, []);
 
   const handleInputChange = (e) => {
     const { id, value } = e.target;
@@ -41,7 +52,7 @@ function App() {
       setFormData(updatedData);
 
       // Update the data on the server
-      axios.patch(`https://jsonplaceholder.typicode.com/users/${editIndex + 1}`, formInput)
+      axios.patch(`https://jsonplaceholder.typicode.com/users/${formInput.id}`, formInput)
         .then(res => {
           console.log(res);
           resetForm();
@@ -51,12 +62,9 @@ function App() {
 
     } else {
       // Adding new data
-      setFormData([...formData, formInput]);
-
-      // Post data to the server
       axios.post("https://jsonplaceholder.typicode.com/users", formInput)
         .then(res => {
-          console.log(res);
+          setFormData([...formData, res.data]);
           resetForm();
         })
         .catch(err => console.log("Error", err));
@@ -80,11 +88,12 @@ function App() {
   };
 
   const handleDeleteData = (index) => {
+    const userId = formData[index].id; // Use the user ID for deletion
     const updatedData = formData.filter((_, i) => i !== index);
     setFormData(updatedData);
 
     // Optionally remove data from the server
-    axios.delete(`https://jsonplaceholder.typicode.com/users/${index + 1}`)
+    axios.delete(`https://jsonplaceholder.typicode.com/users/${userId}`)
       .then(res => console.log(res))
       .catch(err => console.log("Error", err));
   };
@@ -149,7 +158,7 @@ function App() {
           {formData.map((input, index) => (
             <tr key={index}>
               <th scope="row">{index + 1}</th>
-              <td>{input.names}</td>
+              <td>{input.name}</td>
               <td>{input.username}</td>
               <td>{input.email}</td>
               <td>{input.address.street}, {input.address.city}, {input.address.zip}</td>
